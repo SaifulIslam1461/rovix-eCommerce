@@ -1,6 +1,6 @@
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import CategoryGrid from '@/components/CategoryGrid';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import CategoryGrid from '../components/CategoryGrid';
 import Link from 'next/link';
 
 export default function HomePage() {
