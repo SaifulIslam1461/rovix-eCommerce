@@ -65,7 +65,7 @@ export default function HomePage() {
                     <button onClick={() => addToCart(p)} className="w-full py-2 bg-amber-500 text-black font-bold text-xs uppercase tracking-wider rounded hover:bg-amber-400">
                       Add To Cart
                     </button>
-                    <a href={waUrl} target="_blank" rel="noopener noreferrer" className="w-full py-2 bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider rounded flex items-center justify-center gap-2 text-center block">
+                    <a href={waUrl} target="_blank" rel="noopener noreferrer" className="w-full py-2 bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider rounded text-center block">
                       💬 Order on WhatsApp
                     </a>
                   </div>
