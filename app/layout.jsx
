@@ -1,0 +1,16 @@
+import './globals.css';
+
+export const metadata = {
+  title: 'ROVIX - Premium Leather Brand',
+  description: 'Handcrafted luxury leather goods including footwear, bags, wallets, and accessories.',
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body className="bg-rovix-bgLight text-rovix-black antialiased">
+        {children}
+      </body>
+    </html>
+  );
+}
