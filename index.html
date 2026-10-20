@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>মুদি দোকান ম্যানেজমেন্ট ও হিসাব-নিকাশ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Reports -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts (Bangla Supported) -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- App Container -->
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- Sidebar (Desktop) -->
+        <aside id="sidebar" class="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 transition-all duration-300 z-30">
+            <div class="flex items-center justify-center h-16 bg-slate-950 px-4 border-b border-slate-800">
+                <h1 id="brandTitle" class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-store text-emerald-500"></i> মুদি বাজার হিসাব
+                </h1>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <a href="#" onclick="switchTab('dashboard')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-600 text-white font-medium transition-colors" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie w-5"></i> ড্যাশবোর্ড
+                </a>
+                <a href="#" onclick="switchTab('pos')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors" data-tab="pos">
+                    <i class="fa-solid fa-cash-register w-5"></i> পণ্য বিক্রি (POS)
+                </a>
+                <a href="#" onclick="switchTab('products')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors" data-tab="products">
+                    <i class="fa-solid fa-boxes-stacked w-5"></i> পণ্য ব্যবস্থাপনা
+                </a>
+                <a href="#" onclick="switchTab('purchase')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors" data-tab="purchase">
+                    <i class="fa-solid fa-truck-ramp-box w-5"></i> মাল কেনা (পাইকারি)
+                </a>
+                <a href="#" onclick="switchTab('dues')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors" data-tab="dues">
+                    <i class="fa-solid fa-book-bookmark w-5"></i> বাকি ব্যবস্থাপনা
+                </a>
+                <a href="#" onclick="switchTab('expenses')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors" data-tab="expenses">
+                    <i class="fa-solid fa-wallet w-5"></i> দোকানের খরচ
+                </a>
+                <a href="#" onclick="switchTab('stock')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors" data-tab="stock">
+                    <i class="fa-solid fa-triangle-exclamation w-5"></i> স্টক অ্যালার্ট
+                </a>
+                <a href="#" onclick="switchTab('reports')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors" data-tab="reports">
+                    <i class="fa-solid fa-chart-line w-5"></i> লাভ ও রিপোর্ট
+                </a>
+                <a href="#" onclick="switchTab('settings')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-colors" data-tab="settings">
+                    <i class="fa-solid fa-gear w-5"></i> সেটিংস ও ব্যাকআপ
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <!-- Top Header -->
+            <header class="flex items-center justify-between h-16 bg-white border-b border-slate-200 px-4 md:px-6 z-20">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileMenu()" class="md:hidden text-slate-600 hover:text-slate-900 focus:outline-none">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                    <h2 id="pageTitle" class="text-lg md:text-xl font-bold text-slate-800">ড্যাশবোর্ড ওভারভিউ</h2>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="currentDateDisp" class="text-sm font-medium text-slate-600 hidden sm:inline-block"></span>
+                    <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+                        <i class="fa-solid fa-circle text-emerald-500 text-xs animate-pulse"></i>
+                        <span class="text-xs font-semibold text-emerald-700">সিস্টেম লাইভ</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Scrollable Content -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-6" id="mainContent">
+
+                <!-- 1. DASHBOARD TAB -->
+                <div id="tab-dashboard" class="tab-content space-y-6">
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-slate-500">মোট বিক্রি (আজ)</p>
+                                <h3 id="dashTotalSale" class="text-2xl font-bold text-slate-800 mt-1">৳ ০.০০</h3>
+                            </div>
+                            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-bangladeshi-taka-sign"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-slate-500">মোট খরচ</p>
+                                <h3 id="dashTotalExpense" class="text-2xl font-bold text-rose-600 mt-1">৳ ০.০০</h3>
+                            </div>
+                            <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-wallet"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-slate-500">আনুমানিক লাভ</p>
+                                <h3 id="dashTotalProfit" class="text-2xl font-bold text-blue-600 mt-1">৳ ০.০০</h3>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-slate-500">বাকি পাওনা (কাস্টমার)</p>
+                                <h3 id="dashTotalDue" class="text-2xl font-bold text-amber-600 mt-1">৳ ০.০০</h3>
+                            </div>
+                            <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions & Recent Sales -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i> সাম্প্রতিক বিক্রয় তালিকা
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                                            <th class="p-3">ইনভয়েস</th>
+                                            <th class="p-3">তারিখ ও সময়</th>
+                                            <th class="p-3">আইটেম</th>
+                                            <th class="p-3">মোট টাকা</th>
+                                            <th class="p-3">অবস্থা</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentSalesTable" class="divide-y divide-slate-100">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Quick Shortcuts -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                    <i class="fa-solid fa-bolt text-amber-500"></i> দ্রুত কার্যক্রম
+                                </h3>
+                                <div class="space-y-3">
+                                    <button onclick="switchTab('pos')" class="w-full flex items-center justify-between p-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium transition-colors">
+                                        <span class="flex items-center gap-2"><i class="fa-solid fa-cart-shopping"></i> নতুন বিক্রি শুরু করুন</span>
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                    <button onclick="switchTab('products')" class="w-full flex items-center justify-between p-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium transition-colors">
+                                        <span class="flex items-center gap-2"><i class="fa-solid fa-plus"></i> নতুন পণ্য যোগ করুন</span>
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                    <button onclick="switchTab('purchase')" class="w-full flex items-center justify-between p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium transition-colors">
+                                        <span class="flex items-center gap-2"><i class="fa-solid fa-truck"></i> পাইকারি মাল এন্ট্রি</span>
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                    <button onclick="switchTab('dues')" class="w-full flex items-center justify-between p-3 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-medium transition-colors">
+                                        <span class="flex items-center gap-2"><i class="fa-solid fa-hand-holding-dollar"></i> বাকি আদায় করুন</span>
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+                                <p class="text-xs text-slate-400">মুদি দোকান ম্যানেজমেন্ট সিস্টেম ভার্সন ১.০</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. POS / PRODUCT SALE TAB -->
+                <div id="tab-pos" class="tab-content hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Product Selection Grid -->
+                        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col h-[calc(100vh-140px)]">
+                            <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
+                                <div class="relative w-full sm:w-72">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-search"></i></span>
+                                    <input type="text" id="posSearch" onkeyup="filterPOSProducts()" placeholder="পণ্য খুঁজুন..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="text-sm font-medium text-slate-600">মোট পণ্য: <span id="posProductCount">০</span></div>
+                            </div>
+                            <div class="flex-1 overflow-y-auto pr-1">
+                                <div id="posProductGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                    <!-- Dynamic items -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cart & Checkout Area -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between h-[calc(100vh-140px)]">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-cart-shopping text-emerald-600"></i> বর্তমান কার্ট</span>
+                                    <button onclick="clearCart()" class="text-xs text-rose-600 hover:text-rose-800 font-medium">সব মুছুন</button>
+                                </h3>
+                                <div id="cartItemsList" class="divide-y divide-slate-100 overflow-y-auto max-h-[calc(100vh-380px)] pr-1 mb-4">
+                                    <p class="text-center text-slate-400 py-8 text-sm">কার্টে কোনো পণ্য নেই</p>
+                                </div>
+                            </div>
+                            <div class="border-t border-slate-200 pt-4 space-y-3">
+                                <div class="space-y-1.5 text-sm">
+                                    <div class="flex justify-between text-slate-600">
+                                        <span>উপমোট:</span>
+                                        <span id="cartSubtotal">৳ ০.০০</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-slate-600">
+                                        <span>ডিসকাউন্ট:</span>
+                                        <input type="number" id="cartDiscount" value="0" oninput="calculateCartTotal()" class="w-20 px-2 py-1 border border-slate-300 rounded text-right text-sm">
+                                    </div>
+                                    <div class="flex justify-between font-bold text-base text-slate-800 pt-2 border-t border-slate-100">
+                                        <span>সর্বমোট:</span>
+                                        <span id="cartGrandTotal" class="text-emerald-600">৳ ০.০০</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">গ্রাহকের নাম (বাকি বিক্রির জন্য)</label>
+                                    <input type="text" id="customerName" placeholder="সাধারণ গ্রাহক" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 pt-2">
+                                    <button onclick="completeSale('cash')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm">নগদ বিক্রি</button>
+                                    <button onclick="completeSale('due')" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm">বাকি বিক্রি</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. PRODUCTS MANAGEMENT TAB -->
+                <div id="tab-products" class="tab-content hidden space-y-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-boxes-stacked text-emerald-600"></i> পণ্যের তালিকা ও স্টক
+                            </h3>
+                            <button onclick="openProductModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
+                                <i class="fa-solid fa-plus"></i> নতুন পণ্য যোগ করুন
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                                        <th class="p-3">পণ্যের নাম</th>
+                                        <th class="p-3">ক্যাটাগরি</th>
+                                        <th class="p-3">ক্রয়মূল্য</th>
+                                        <th class="p-3">বিক্রয়মূল্য</th>
+                                        <th class="p-3">স্টক পরিমাণ</th>
+                                        <th class="p-3 text-center">কার্যক্রম</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTableBody" class="divide-y divide-slate-100">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. PURCHASE TAB (WHOLESALE) -->
+                <div id="tab-purchase" class="tab-content hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-truck-ramp-box text-emerald-600"></i> পাইকারি মাল ক্রয়ের হিসাব
+                            </h3>
+                            <form id="purchaseForm" onsubmit="handlePurchaseSubmit(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">পাইকার / সাপ্লায়ারের নাম</label>
+                                    <input type="text" id="supplierName" required placeholder="কোম্পানি বা পাইকারের নাম" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">পণ্য নির্বাচন করুন</label>
+                                    <select id="purchaseProductId" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                        <!-- Options -->
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-600 mb-1">পরিমাণ</label>
+                                        <input type="number" id="purchaseQty" required min="1" placeholder="কত পিস/কেজি" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-600 mb-1">মোট বিল (টাকা)</label>
+                                        <input type="number" id="purchaseTotal" required min="0" placeholder="মোট দাম" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-600 mb-1">পরিশোধ করা হয়েছে</label>
+                                        <input type="number" id="purchasePaid" required min="0" placeholder="নগদ প্রদান" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-600 mb-1">বাকি (দেনা)</label>
+                                        <input type="number" id="purchaseDue" readonly placeholder="স্বয়ংক্রিয় বাকি" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-500">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm">ক্রয় এন্ট্রি সংরক্ষণ করুন</button>
+                            </form>
+                        </div>
+                        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-list text-slate-600"></i> সাম্প্রতিক পাইকারি ক্রয়ের ইতিহাস
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                                            <th class="p-3">তারিখ</th>
+                                            <th class="p-3">সাপ্লায়ার</th>
+                                            <th class="p-3">পণ্য</th>
+                                            <th class="p-3">পরিমাণ</th>
+                                            <th class="p-3">মোট বিল</th>
+                                            <th class="p-3">পরিশোধ</th>
+                                            <th class="p-3">বাকি</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="purchaseTableBody" class="divide-y divide-slate-100">
+                                        <!-- Rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. DUES MANAGEMENT TAB -->
+                <div id="tab-dues" class="tab-content hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Customer Dues -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-users text-amber-600"></i> কাস্টমার বাকি (পাওনা খাতা)
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                                            <th class="p-3">কাস্টমার নাম</th>
+                                            <th class="p-3">মোট বাকি</th>
+                                            <th class="p-3 text-center">টাকা আদায়</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="customerDueTableBody" class="divide-y divide-slate-100">
+                                        <!-- Rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Supplier Dues -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-truck text-rose-600"></i> পাইকার দেনা (সাপ্লায়ার খাতা)
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                                            <th class="p-3">সাপ্লায়ার নাম</th>
+                                            <th class="p-3">মোট দেনা</th>
+                                            <th class="p-3 text-center">পরিশোধ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="supplierDueTableBody" class="divide-y divide-slate-100">
+                                        <!-- Rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. EXPENSES TAB -->
+                <div id="tab-expenses" class="tab-content hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-wallet text-rose-600"></i> নতুন খরচ এন্ট্রি
+                            </h3>
+                            <form id="expenseForm" onsubmit="handleExpenseSubmit(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">খরচের খাত</label>
+                                    <select id="expenseCategory" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                        <option value="দোকান ভাড়া">দোকান ভাড়া</option>
+                                        <option value="বিদ্যুৎ বিল">বিদ্যুৎ বিল</option>
+                                        <option value="কর্মচারীর বেতন">কর্মচারীর বেতন</option>
+                                        <option value="পরিবহন খরচ">পরিবহন খরচ</option>
+                                        <option value="অন্যান্য">অন্যান্য খরচ</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">টাকার পরিমাণ</label>
+                                    <input type="number" id="expenseAmount" required min="1" placeholder="টাকার পরিমাণ" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">বিবরণ (ঐচ্ছিক)</label>
+                                    <input type="text" id="expenseNote" placeholder="সংক্ষিপ্ত বিবরণ" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm">খরচ সংরক্ষণ করুন</button>
+                            </form>
+                        </div>
+                        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-list text-slate-600"></i> সাম্প্রতিক খরচের তালিকা
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                                            <th class="p-3">তারিখ</th>
+                                            <th class="p-3">খাত</th>
+                                            <th class="p-3">বিবরণ</th>
+                                            <th class="p-3">টাকা</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="expenseTableBody" class="divide-y divide-slate-100">
+                                        <!-- Rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. STOCK MANAGEMENT TAB -->
+                <div id="tab-stock" class="tab-content hidden space-y-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> স্টক অ্যালার্ট ও ঘাটতি পণ্য
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                                        <th class="p-3">পণ্যের নাম</th>
+                                        <th class="p-3">ক্যাটাগরি</th>
+                                        <th class="p-3">বর্তমান স্টক</th>
+                                        <th class="p-3">অবস্থা</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lowStockTableBody" class="divide-y divide-slate-100">
+                                    <!-- Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. REPORTS TAB -->
+                <div id="tab-reports" class="tab-content hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <p class="text-sm font-medium text-slate-500">মোট বিক্রয় (সার্বকালীন)</p>
+                            <h3 id="reportTotalSale" class="text-2xl font-bold text-slate-800 mt-1">৳ ০.০০</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <p class="text-sm font-medium text-slate-500">মোট লাভ (সার্বকালীন)</p>
+                            <h3 id="reportTotalProfit" class="text-2xl font-bold text-blue-600 mt-1">৳ ০.০০</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <p class="text-sm font-medium text-slate-500">মোট খরচ (সার্বকালীন)</p>
+                            <h3 id="reportTotalExpense" class="text-2xl font-bold text-rose-600 mt-1">৳ ০.০০</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-slate-800">রিপোর্ট প্রিন্ট বা PDF ডাউনলোড</h3>
+                        <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-file-pdf"></i> প্রিন্ট বা PDF করুন
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 9. SETTINGS & BACKUP TAB -->
+                <div id="tab-settings" class="tab-content hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-store text-emerald-600"></i> দোকানের তথ্য সেটিংস
+                            </h3>
+                            <form id="settingsForm" onsubmit="saveSettings(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">দোকানের নাম</label>
+                                    <input type="text" id="settingShopName" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">ঠিকানা</label>
+                                    <input type="text" id="settingShopAddress" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-600 mb-1">মোবাইল নম্বর</label>
+                                    <input type="text" id="settingShopPhone" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors shadow-sm">সেটিংস সংরক্ষণ করুন</button>
+                            </form>
+                        </div>
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                    <i class="fa-solid fa-database text-blue-600"></i> ডেটা ব্যাকআপ ও রিস্টোর
+                                </h3>
+                                <p class="text-sm text-slate-500 mb-4">আপনার দোকানের সকল হিসাবের নিরাপত্তা নিশ্চিত করতে ডেটা ব্যাকআপ ফাইল ডাউনলোড করে রাখতে পারেন এবং প্রয়োজনে তা আবার আপলোড করে রিস্টোর করতে পারেন।</p>
+                                <div class="space-y-3">
+                                    <button onclick="exportData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                        <i class="fa-solid fa-download"></i> ডেটা ব্যাকআপ ডাউনলোড করুন
+                                    </button>
+                                    <label class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                                        <i class="fa-solid fa-upload"></i> ডেটা রিস্টোর করুন
+                                        <input type="file" id="importFile" onchange="importData(event)" accept=".json" class="hidden">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Product Add/Edit Modal -->
+    <div id="productModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+                <h3 id="productModalTitle" class="text-lg font-bold text-slate-800">নতুন পণ্য যোগ করুন</h3>
+                <button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="productForm" onsubmit="handleProductSubmit(event)" class="p-5 space-y-4">
+                <input type="hidden" id="editProductId">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">পণ্যের নাম</label>
+                    <input type="text" id="prodName" required placeholder="যেমন: চিনি, ডাল, তেল" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">ক্যাটাগরি</label>
+                    <input type="text" id="prodCategory" required placeholder="যেমন: মসলা, গ্রোসারি" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">ক্রয়মূল্য (৳)</label>
+                        <input type="number" id="prodBuyPrice" required min="0" step="0.01" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">বিক্রয়মূল্য (৳)</label>
+                        <input type="number" id="prodSellPrice" required min="0" step="0.01" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">স্টক পরিমাণ</label>
+                    <input type="number" id="prodStock" required min="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeProductModal()" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-50">বাতিল</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 shadow-sm">সংরক্ষণ করুন</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Code -->
+    <script>
+        // LocalStorage Data Initialization
+        let db = JSON.parse(localStorage.getItem('grocery_db')) || {
+            settings: { shopName: "ভাই ভাই মুদি স্টোর", shopAddress: "পরশুরাম, ফেনী", shopPhone: "01800000000" },
+            products: [
+                { id: 1, name: "মিনিকেট চাল (কেজি)", category: "চাল", buyPrice: 65, sellPrice: 72, stock: 120 },
+                { id: 2, name: "সয়াবিন তেল (লিটার)", category: "তেল", buyPrice: 165, sellPrice: 178, stock: 45 },
+                { id: 3, name: "মসুর ডাল (কেজি)", category: "ডাল", buyPrice: 130, sellPrice: 145, stock: 30 },
+                { id: 4, name: "চিনি (কেজি)", category: "চিনি", buyPrice: 135, sellPrice: 142, stock: 25 },
+                { id: 5, name: "লবণ (প্যাকেট)", category: "লবণ", buyPrice: 35, sellPrice: 40, stock: 10 }
+            ],
+            sales: [],
+            purchases: [],
+            expenses: [],
+            customers: {}, // name -> due amount
+            suppliers: {}  // name -> due amount
+        };
+
+        let cart = [];
+
+        function saveDB() {
+            localStorage.setItem('grocery_db', JSON.stringify(db));
+        }
+
+        // Date Display
+        document.getElementById('currentDateDisp').innerText = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Tab Navigation
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-emerald-600', 'text-white');
+                el.classList.add('hover:bg-slate-800', 'hover:text-white');
+                if(el.getAttribute('data-tab') === tabId) {
+                    el.classList.add('bg-emerald-600', 'text-white');
+                    el.classList.remove('hover:bg-slate-800', 'hover:text-white');
+                }
+            });
+
+            const titles = {
+                dashboard: 'ড্যাশবোর্ড ওভারভিউ',
+                pos: 'পণ্য বিক্রি (POS টার্মিনাল)',
+                products: 'পণ্য ব্যবস্থাপনা ও স্টক',
+                purchase: 'পাইকারি মাল ক্রয় হিসাব',
+                dues: 'বাকি ব্যবস্থাপনা ও খাতা',
+                expenses: 'দোকানের খরচ হিসাব',
+                stock: 'স্টক অ্যালার্ট ও ঘাটতি',
+                reports: 'লাভ ও লাভ-লোকসান রিপোর্ট',
+                settings: 'সেটিংস ও ডেটা ব্যাকআপ'
+            };
+            document.getElementById('pageTitle').innerText = titles[tabId];
+
+            // Trigger Specific Renders
+            if(tabId === 'dashboard') renderDashboard();
+            if(tabId === 'pos') renderPOSProducts();
+            if(tabId === 'products') renderProductsTable();
+            if(tabId === 'purchase') { renderPurchaseFormDropdown(); renderPurchasesTable(); }
+            if(tabId === 'dues') renderDuesTables();
+            if(tabId === 'expenses') renderExpensesTable();
+            if(tabId === 'stock') renderStockAlerts();
+            if(tabId === 'reports') renderReports();
+            if(tabId === 'settings') loadSettings();
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('absolute');
+            sidebar.classList.toggle('inset-y-0');
+            sidebar.classList.toggle('left-0');
+        }
+
+        // 1. Dashboard Render
+        function renderDashboard() {
+            let today = new Date().toDateString();
+            let todaySales = db.sales.filter(s => new Date(s.date).toDateString() === today);
+            let totalSaleAmount = todaySales.reduce((sum, s) => sum + s.grandTotal, 0);
+            let totalExpenseAmount = db.expenses.reduce((sum, e) => sum + e.amount, 0);
+            let totalProfitAmount = db.sales.reduce((sum, s) => sum + s.profit, 0);
+
+            let totalCustomerDue = Object.values(db.customers).reduce((a, b) => a + b, 0);
+
+            document.getElementById('dashTotalSale').innerText = `৳ ${totalSaleAmount.toLocaleString('bn-BD')}`;
+            document.getElementById('dashTotalExpense').innerText = `৳ ${totalExpenseAmount.toLocaleString('bn-BD')}`;
+            document.getElementById('dashTotalProfit').innerText = `৳ ${totalProfitAmount.toLocaleString('bn-BD')}`;
+            document.getElementById('dashTotalDue').innerText = `৳ ${totalCustomerDue.toLocaleString('bn-BD')}`;
+
+            let recentHTML = '';
+            db.sales.slice(-5).reverse().forEach(sale => {
+                recentHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-medium text-slate-700">#INV-${sale.id}</td>
+                        <td class="p-3 text-slate-500">${new Date(sale.date).toLocaleTimeString('bn-BD')}</td>
+                        <td class="p-3">${sale.items.length} টি পণ্য</td>
+                        <td class="p-3 font-bold text-emerald-600">৳ ${sale.grandTotal}</td>
+                        <td class="p-3"><span class="px-2 py-1 text-xs rounded-full ${sale.type === 'cash' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${sale.type === 'cash' ? 'নগদ' : 'বাকি'}</span></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('recentSalesTable').innerHTML = recentHTML || `<tr><td colspan="5" class="text-center text-slate-400 py-4">কোনো বিক্রয় তথ্য নেই</td></tr>`;
+        }
+
+        // 2. POS Functions
+        function renderPOSProducts() {
+            document.getElementById('posProductCount').innerText = db.products.length.toLocaleString('bn-BD');
+            let gridHTML = '';
+            db.products.forEach(p => {
+                gridHTML += `
+                    <div onclick="addToCart(${p.id})" class="bg-white border border-slate-200 hover:border-emerald-500 rounded-lg p-3 cursor-pointer shadow-sm transition-all flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm line-clamp-1">${p.name}</h4>
+                            <p class="text-xs text-slate-500">${p.category}</p>
+                        </div>
+                        <div class="mt-2 flex items-center justify-between">
+                            <span class="text-emerald-600 font-bold text-sm">৳ ${p.sellPrice}</span>
+                            <span class="text-xs px-1.5 py-0.5 bg-slate-100 rounded text-slate-600">স্টক: ${p.stock}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('posProductGrid').innerHTML = gridHTML || `<p class="col-span-full text-center text-slate-400 py-8">কোনো পণ্য পাওয়া যায়নি</p>`;
+        }
+
+        function filterPOSProducts() {
+            let query = document.getElementById('posSearch').value.toLowerCase();
+            let filtered = db.products.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query));
+            let gridHTML = '';
+            filtered.forEach(p => {
+                gridHTML += `
+                    <div onclick="addToCart(${p.id})" class="bg-white border border-slate-200 hover:border-emerald-500 rounded-lg p-3 cursor-pointer shadow-sm transition-all flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm line-clamp-1">${p.name}</h4>
+                            <p class="text-xs text-slate-500">${p.category}</p>
+                        </div>
+                        <div class="mt-2 flex items-center justify-between">
+                            <span class="text-emerald-600 font-bold text-sm">৳ ${p.sellPrice}</span>
+                            <span class="text-xs px-1.5 py-0.5 bg-slate-100 rounded text-slate-600">স্টক: ${p.stock}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('posProductGrid').innerHTML = gridHTML;
+        }
+
+        function addToCart(id) {
+            let prod = db.products.find(p => p.id === id);
+            if(prod.stock <= 0) {
+                alert('এই পণ্যটি স্টকে শেষ!');
+                return;
+            }
+            let item = cart.find(c => c.id === id);
+            if(item) {
+                if(item.qty < prod.stock) item.qty++;
+                else alert('স্টকের বেশি পণ্য যুক্ত করা যাবে না!');
+            } else {
+                cart.push({ id: prod.id, name: prod.name, price: prod.sellPrice, buyPrice: prod.buyPrice, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            let html = '';
+            let subtotal = 0;
+            cart.forEach((item, index) => {
+                subtotal += item.price * item.qty;
+                html += `
+                    <div class="py-2 flex items-center justify-between text-sm">
+                        <div>
+                            <p class="font-medium text-slate-800">${item.name}</p>
+                            <p class="text-xs text-slate-500">৳ ${item.price} × ${item.qty}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-700">৳ ${item.price * item.qty}</span>
+                            <button onclick="removeFromCart(${index})" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('cartItemsList').innerHTML = html || `<p class="text-center text-slate-400 py-8 text-sm">কার্টে কোনো পণ্য নেই</p>`;
+            document.getElementById('cartSubtotal').innerText = `৳ ${subtotal}`;
+            calculateCartTotal();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function clearCart() {
+            cart = [];
+            renderCart();
+        }
+
+        function calculateCartTotal() {
+            let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let discount = parseFloat(document.getElementById('cartDiscount').value) || 0;
+            let grandTotal = Math.max(0, subtotal - discount);
+            document.getElementById('cartGrandTotal').innerText = `৳ ${grandTotal}`;
+        }
+
+        function completeSale(type) {
+            if(cart.length === 0) {
+                alert('কার্ট খালি!');
+                return;
+            }
+            let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let discount = parseFloat(document.getElementById('cartDiscount').value) || 0;
+            let grandTotal = Math.max(0, subtotal - discount);
+            let customer = document.getElementById('customerName').value.trim() || 'সাধারণ গ্রাহক';
+
+            let profit = cart.reduce((sum, item) => sum + ((item.price - item.buyPrice) * item.qty), 0) - discount;
+
+            // Update Stock
+            cart.forEach(item => {
+                let p = db.products.find(prod => prod.id === item.id);
+                if(p) p.stock -= item.qty;
+            });
+
+            // Handle Due
+            if(type === 'due') {
+                db.customers[customer] = (db.customers[customer] || 0) + grandTotal;
+            }
+
+            let saleRecord = {
+                id: Date.now().toString().slice(-6),
+                date: new Date().toISOString(),
+                items: [...cart],
+                subtotal, discount, grandTotal, type, customer, profit
+            };
+
+            db.sales.push(saleRecord);
+            saveDB();
+
+            alert('বিক্রি সফলভাবে সম্পন্ন হয়েছে!');
+            cart = [];
+            document.getElementById('customerName').value = '';
+            document.getElementById('cartDiscount').value = '0';
+            renderCart();
+            renderPOSProducts();
+        }
+
+        // 3. Products Management
+        function renderProductsTable() {
+            let html = '';
+            db.products.forEach(p => {
+                html += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-medium text-slate-800">${p.name}</td>
+                        <td class="p-3 text-slate-600">${p.category}</td>
+                        <td class="p-3 text-slate-600">৳ ${p.buyPrice}</td>
+                        <td class="p-3 text-emerald-600 font-semibold">৳ ${p.sellPrice}</td>
+                        <td class="p-3"><span class="px-2 py-1 text-xs rounded-full ${p.stock <= 5 ? 'bg-rose-100 text-rose-700 font-bold' : 'bg-slate-100 text-slate-700'}">${p.stock} টি</span></td>
+                        <td class="p-3 text-center flex items-center justify-center gap-2">
+                            <button onclick="openProductModal(${p.id})" class="text-blue-600 hover:text-blue-800 p-1"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProduct(${p.id})" class="text-rose-600 hover:text-rose-800 p-1"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('productsTableBody').innerHTML = html || `<tr><td colspan="6" class="text-center text-slate-400 py-4">কোনো পণ্য নেই</td></tr>`;
+        }
+
+        function openProductModal(id = null) {
+            document.getElementById('productModal').classList.remove('hidden');
+            document.getElementById('productModal').classList.add('flex');
+            if(id) {
+                document.getElementById('productModalTitle').innerText = 'পণ্য সম্পাদনা করুন';
+                let p = db.products.find(prod => prod.id === id);
+                document.getElementById('editProductId').value = p.id;
+                document.getElementById('prodName').value = p.name;
+                document.getElementById('prodCategory').value = p.category;
+                document.getElementById('prodBuyPrice').value = p.buyPrice;
+                document.getElementById('prodSellPrice').value = p.sellPrice;
+                document.getElementById('prodStock').value = p.stock;
+            } else {
+                document.getElementById('productModalTitle').innerText = 'নতুন পণ্য যোগ করুন';
+                document.getElementById('productForm').reset();
+                document.getElementById('editProductId').value = '';
+            }
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').classList.add('hidden');
+            document.getElementById('productModal').classList.remove('flex');
+        }
+
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            let id = document.getElementById('editProductId').value;
+            let name = document.getElementById('prodName').value;
+            let category = document.getElementById('prodCategory').value;
+            let buyPrice = parseFloat(document.getElementById('prodBuyPrice').value);
+            let sellPrice = parseFloat(document.getElementById('prodSellPrice').value);
+            let stock = parseInt(document.getElementById('prodStock').value);
+
+            if(id) {
+                let p = db.products.find(prod => prod.id == id);
+                p.name = name; p.category = category; p.buyPrice = buyPrice; p.sellPrice = sellPrice; p.stock = stock;
+            } else {
+                let newProd = { id: Date.now(), name, category, buyPrice, sellPrice, stock };
+                db.products.push(newProd);
+            }
+            saveDB();
+            closeProductModal();
+            renderProductsTable();
+        }
+
+        function deleteProduct(id) {
+            if(confirm('আপনি কি পণ্যটি মুছে ফেলতে চান?')) {
+                db.products = db.products.filter(p => p.id !== id);
+                saveDB();
+                renderProductsTable();
+            }
+        }
+
+        // 4. Purchase (Wholesale) Functions
+        function renderPurchaseFormDropdown() {
+            let select = document.getElementById('purchaseProductId');
+            select.innerHTML = '<option value="">পণ্য নির্বাচন করুন</option>';
+            db.products.forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.name} (স্টক: ${p.stock})</option>`;
+            });
+
+            document.getElementById('purchaseTotal').addEventListener('input', updatePurchaseDue);
+            document.getElementById('purchasePaid').addEventListener('input', updatePurchaseDue);
+        }
+
+        function updatePurchaseDue() {
+            let total = parseFloat(document.getElementById('purchaseTotal').value) || 0;
+            let paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
+            document.getElementById('purchaseDue').value = Math.max(0, total - paid);
+        }
+
+        function handlePurchaseSubmit(e) {
+            e.preventDefault();
+            let supplier = document.getElementById('supplierName').value.trim();
+            let productId = parseInt(document.getElementById('purchaseProductId').value);
+            let qty = parseInt(document.getElementById('purchaseQty').value);
+            let total = parseFloat(document.getElementById('purchaseTotal').value);
+            let paid = parseFloat(document.getElementById('purchasePaid').value);
+            let due = total - paid;
+
+            let prod = db.products.find(p => p.id === productId);
+            if(prod) prod.stock += qty;
+
+            if(due > 0) {
+                db.suppliers[supplier] = (db.suppliers[supplier] || 0) + due;
+            }
+
+            db.purchases.push({
+                id: Date.now(),
+                date: new Date().toISOString(),
+                supplier, productName: prod ? prod.name : '', qty, total, paid, due
+            });
+
+            saveDB();
+            document.getElementById('purchaseForm').reset();
+            renderPurchasesTable();
+            alert('ক্রয় সফলভাবে সংরক্ষিত হয়েছে!');
+        }
+
+        function renderPurchasesTable() {
+            let html = '';
+            db.purchases.slice(-10).reverse().forEach(p => {
+                html += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 text-slate-500">${new Date(p.date).toLocaleDateString('bn-BD')}</td>
+                        <td class="p-3 font-medium text-slate-800">${p.supplier}</td>
+                        <td class="p-3">${p.productName}</td>
+                        <td class="p-3">${p.qty} টি</td>
+                        <td class="p-3 font-bold text-slate-800">৳ ${p.total}</td>
+                        <td class="p-3 text-emerald-600">৳ ${p.paid}</td>
+                        <td class="p-3 text-rose-600">৳ ${p.due}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('purchaseTableBody').innerHTML = html || `<tr><td colspan="7" class="text-center text-slate-400 py-4">কোনো ক্রয়ের ইতিহাস নেই</td></tr>`;
+        }
+
+        // 5. Dues Management
+        function renderDuesTables() {
+            let custHTML = '';
+            for(let [name, due] of Object.entries(db.customers)) {
+                if(due > 0) {
+                    custHTML += `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-3 font-medium text-slate-800">${name}</td>
+                            <td class="p-3 font-bold text-amber-600">৳ ${due}</td>
+                            <td class="p-3 text-center">
+                                <button onclick="payCustomerDue('${name}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs shadow-sm">টাকা আদায়</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+            document.getElementById('customerDueTableBody').innerHTML = custHTML || `<tr><td colspan="3" class="text-center text-slate-400 py-4">কোনো বাকি কাস্টমার নেই</td></tr>`;
+
+            let suppHTML = '';
+            for(let [name, due] of Object.entries(db.suppliers)) {
+                if(due > 0) {
+                    suppHTML += `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-3 font-medium text-slate-800">${name}</td>
+                            <td class="p-3 font-bold text-rose-600">৳ ${due}</td>
+                            <td class="p-3 text-center">
+                                <button onclick="paySupplierDue('${name}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs shadow-sm">পরিশোধ</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+            document.getElementById('supplierDueTableBody').innerHTML = suppHTML || `<tr><td colspan="3" class="text-center text-slate-400 py-4">কোনো পাইকার দেনা নেই</td></tr>`;
+        }
+
+        function payCustomerDue(name) {
+            let amount = parseFloat(prompt(`${name}-এর কাছ থেকে কত টাকা আদায় করা হয়েছে?`));
+            if(amount > 0 && amount <= db.customers[name]) {
+                db.customers[name] -= amount;
+                if(db.customers[name] <= 0) delete db.customers[name];
+                saveDB();
+                renderDuesTables();
+                alert('বাকি টাকা সফলভাবে আদায় করা হয়েছে!');
+            } else {
+                alert('সঠিক পরিমাণ লিখুন!');
+            }
+        }
+
+        function paySupplierDue(name) {
+            let amount = parseFloat(prompt(`${name}-কে কত টাকা পরিশোধ করা হয়েছে?`));
+            if(amount > 0 && amount <= db.suppliers[name]) {
+                db.suppliers[name] -= amount;
+                if(db.suppliers[name] <= 0) delete db.suppliers[name];
+                saveDB();
+                renderDuesTables();
+                alert('টাকা সফলভাবে পরিশোধ করা হয়েছে!');
+            } else {
+                alert('সঠিক পরিমাণ লিখুন!');
+            }
+        }
+
+        // 6. Expenses Management
+        function handleExpenseSubmit(e) {
+            e.preventDefault();
+            let category = document.getElementById('expenseCategory').value;
+            let amount = parseFloat(document.getElementById('expenseAmount').value);
+            let note = document.getElementById('expenseNote').value;
+
+            db.expenses.push({ id: Date.now(), date: new Date().toISOString(), category, amount, note });
+            saveDB();
+            document.getElementById('expenseForm').reset();
+            renderExpensesTable();
+            alert('খরচ সফলভাবে সংরক্ষিত হয়েছে!');
+        }
+
+        function renderExpensesTable() {
+            let html = '';
+            db.expenses.slice(-10).reverse().forEach(ex => {
+                html += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 text-slate-500">${new Date(ex.date).toLocaleDateString('bn-BD')}</td>
+                        <td class="p-3 font-medium text-slate-800">${ex.category}</td>
+                        <td class="p-3 text-slate-600">${ex.note || '-'}</td>
+                        <td class="p-3 font-bold text-rose-600">৳ ${ex.amount}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('expenseTableBody').innerHTML = html || `<tr><td colspan="4" class="text-center text-slate-400 py-4">কোনো খরচের হিসাব নেই</td></tr>`;
+        }
+
+        // 7. Stock Alerts
+        function renderStockAlerts() {
+            let html = '';
+            db.products.forEach(p => {
+                if(p.stock <= 5) {
+                    html += `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-3 font-medium text-slate-800">${p.name}</td>
+                            <td class="p-3 text-slate-600">${p.category}</td>
+                            <td class="p-3 font-bold text-rose-600">${p.stock} টি</td>
+                            <td class="p-3"><span class="px-2 py-1 text-xs bg-rose-100 text-rose-700 rounded-full font-semibold">স্টক সংকটাপন্ন!</span></td>
+                        </tr>
+                    `;
+                }
+            });
+            document.getElementById('lowStockTableBody').innerHTML = html || `<tr><td colspan="4" class="text-center text-slate-400 py-4">সকল পণ্যের স্টক পর্যাপ্ত আছে</td></tr>`;
+        }
+
+        // 8. Reports
+        function renderReports() {
+            let totalSale = db.sales.reduce((sum, s) => sum + s.grandTotal, 0);
+            let totalProfit = db.sales.reduce((sum, s) => sum + s.profit, 0);
+            let totalExpense = db.expenses.reduce((sum, e) => sum + e.amount, 0);
+
+            document.getElementById('reportTotalSale').innerText = `৳ ${totalSale.toLocaleString('bn-BD')}`;
+            document.getElementById('reportTotalProfit').innerText = `৳ ${totalProfit.toLocaleString('bn-BD')}`;
+            document.getElementById('reportTotalExpense').innerText = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
+        }
+
+        // 9. Settings & Backup
+        function loadSettings() {
+            document.getElementById('settingShopName').value = db.settings.shopName;
+            document.getElementById('settingShopAddress').value = db.settings.shopAddress;
+            document.getElementById('settingShopPhone').value = db.settings.shopPhone;
+        }
+
+        function saveSettings(e) {
+            e.preventDefault();
+            db.settings.shopName = document.getElementById('settingShopName').value;
+            db.settings.shopAddress = document.getElementById('settingShopAddress').value;
+            db.settings.shopPhone = document.getElementById('settingShopPhone').value;
+            saveDB();
+            document.getElementById('brandTitle').innerHTML = `<i class="fa-solid fa-store text-emerald-500"></i> ${db.settings.shopName}`;
+            alert('সেটিংস সফলভাবে সংরক্ষিত হয়েছে!');
+        }
+
+        function exportData() {
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `grocery_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            let file = event.target.files[0];
+            if(!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    db = JSON.parse(e.target.result);
+                    saveDB();
+                    alert('ডেটা সফলভাবে রিস্টোর করা হয়েছে!');
+                    location.reload();
+                } catch(err) {
+                    alert('সঠিক ব্যাকআপ ফাইল আপলোড করুন!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Initial Load
+        document.getElementById('brandTitle').innerHTML = `<i class="fa-solid fa-store text-emerald-500"></i> ${db.settings.shopName}`;
+        renderDashboard();
+    </script>
+</body>
+</html>
